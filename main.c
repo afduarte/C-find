@@ -15,7 +15,7 @@
 #endif
 
 #ifndef TEST
-#include "test1_search.h"
+#include "new_search.h"
 #endif
 
 
