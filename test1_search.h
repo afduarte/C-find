@@ -14,6 +14,7 @@ struct opts{
 
 //TODO: htmlify if output to file 
 //TODO: Whole word checking not working
+//STATUS: loop until segmentation fault because word is never != NULL
 
 // Checks if a passed in(in the form of a pointer) char is a white space character that matters for this use case
 // Returns 0 if the char passed in is not a '\t', or a '\n' or a ' '
@@ -105,12 +106,6 @@ int search(char *string, char *input, char *output, struct opts options){
 
             // check if it is safe to move the buffer pointer to the end of the word pointer.
             // if it is, move it, else, change word to null to break out of the while loop
-
-            // fprintf(ofp, "Buffer before changing: \"%s\" Address: %p\n",buffer,buffer);
-
-            // fprintf(ofp, "Last Buffer Char: %s\n",(&buffer[strlen(string)-1]));
-            // fprintf(ofp, "Char after word: %s\n",(&word[strlen(string)]));
-
             if((buffer+strlen(buffer)-1) >= (word+strlen(string))){
 
                 if(!word+strlen(string)=='\n'){
