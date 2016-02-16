@@ -14,40 +14,20 @@ struct opts{
 
 //TODO: htmlify if output to file 
 //TODO: Whole word checking not working
+//STATUS: loop until segmentation fault because word is never != NULL
 
-
-// Implementation of getline() to make it portable: 
-// https://sucs.org/Knowledge/Help/Program%20Advisory/Reading%20an%20arbitrarily%20long%20line%20in%20C#diy
-
-char * mygetline(FILE * f){
-    size_t size = 0;
-    size_t len  = 0;
-    size_t last = 0;
-    char *buf = NULL;
-
-    do {
-        size += BUFSIZ; /* BUFSIZ is defined as "the optimal read size for this platform" */
-        buf = realloc(buf, size); /* realloc(NULL,n) is the same as malloc(n) */            
-        /* Actually do the read. Note that fgets puts a terminal '\0' on the
-           end of the string, so we make sure we overwrite this */
-        if (buf == NULL) return NULL;
-        fgets(buf + last, size, f);
-        len = strlen(buf);
-        last = len - 1;
-    } while (!feof(f) && buf[last] != '\n');
-    return buf;
+// Checks if a passed in(in the form of a pointer) char is a white space character that matters for this use case
+// Returns 0 if the char passed in is not a '\t', or a '\n' or a ' '
+int is_white(char *ch){
+    if(*ch==' ')
+        return 1;
+    else if(*ch=='\n')
+        return 2;
+    else if(*ch=='\t')
+        return 3;
+    else
+        return 0;
 }
-
-// REFS:
-    //http://www.tutorialspoint.com/c_standard_library/c_function_sscanf.htm
-    //http://stackoverflow.com/questions/11198604/c-split-string-into-an-array-of-strings
-    //https://msdn.microsoft.com/en-us/library/2c8d19sb(v=vs.71).aspx
-    //http://stackoverflow.com/questions/8097620/c-read-from-input-until-newline-is-found
-    //http://stackoverflow.com/questions/7586990/strstr-faster-than-algorithms
-    //http://qa.geeksforgeeks.org/3247/write-strstr-function-with-single-without-strcmp-function
-    //http://stackoverflow.com/questions/9206091/going-through-a-text-file-line-by-line-in-c
-
-
 // Search function
 int search(char *string, char *input, char *output, struct opts options){
     //Input file pointer
@@ -56,11 +36,10 @@ int search(char *string, char *input, char *output, struct opts options){
     FILE *ofp;
     int line_num = 1;
     int find_result = 0;
-    // CAVEAT: if word gets split in half due to line buffer size, it won't be found...
-    //char buffer[512];
+    
+    char *buffer;
+
     char *word;
-    char line;
-    char *buffer = &line;
 
     //Open input file
     //If file fails to open, output message and return 0 for unsuccessful
@@ -77,25 +56,92 @@ int search(char *string, char *input, char *output, struct opts options){
         ofp=stdout;
     //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
     }else if((ofp=fopen(output, "w"))==NULL){
-        printf("Can't open output file: %s\n",output);
+        //if(DEBUG)printf("Can't open output file: %s\n",output);
         return 0;
     //Else, print success message
     }else{
-        printf("Opened file: %s to write to\n",output);
+        //if(DEBUG)printf("Opened file: %s to write to\n",output);
     }
 
     // Print the result separator
     printf("\n--RESULTS--\n\n");
 
-    while(line=mygetline(ifp) != NULL){
-        printf("%s\n",*line );
-        // If case sensitive, do strstr, else do strcasestr
-        word=options.match_case?strstr(buffer, string):strcasestr(buffer, string);
+    buffer = malloc(512*sizeof(char));
 
-        if(word!=NULL){
-            //If output_lines, print the line number before the line
+    while(fgets(buffer, 512, ifp) != NULL){
+
+        // If case sensitive, do strstr, else do strcasestr
+        // word = options.match_case?strstr(buffer, string):strcasestr(buffer, string)
+
+        while( (word=strstr(buffer, string)) != NULL){
+
+            // word = strstr(buffer, string);
+
             if(options.output_lines)
                 fprintf(ofp,"Line %d:", line_num);
+
+            if(word==buffer && is_white(word+strlen(string)) || is_white((word-1)) && is_white(word+strlen(string)) ){
+                if(options.mode==1){
+                    char *print_word = (char*)malloc(sizeof(char)*strlen(string)+1);
+                    strcpy(print_word,word);
+                    print_word[strlen(string)] ='\0';
+                    fprintf(ofp,"%s ",print_word);
+                    fprintf(ofp, "\n");
+                    // free(print_word);
+                }else if(options.mode==2){
+                    fprintf(ofp,"%s ",buffer);
+                }
+            }
+
+            if(options.mode>2){
+                if(options.mode==3){
+                    word[strlen(string)] ='\0';
+                    fprintf(ofp,"%s ",word);
+                }else if(options.mode==4){
+                    fprintf(ofp,"%s ",buffer);
+                }
+            }
+
+            fprintf(ofp, "%d\n",find_result++);
+
+            // check if it is safe to move the buffer pointer to the end of the word pointer.
+            // if it is, move it, else, change word to null to break out of the while loop
+            if((buffer+strlen(buffer)-1) >= (word+strlen(string))){
+
+                if(!word+strlen(string)=='\n'){
+                    buffer = word+strlen(string);
+                    getchar();
+                }
+
+                if(word[strlen(string)]=='\n'){
+                    fprintf(ofp, "Word set to null\n");
+                    word = NULL;
+                }
+                // fprintf(ofp, "Buffer after changing: %s Address: %p\n",buffer,buffer);
+                
+            }
+
+            // if(buffer[strlen(buffer)-1]== '\n'){
+            //     printf("\n");
+            // }
+
+        }
+
+
+
+        // if(word!=NULL && word[strlen(string)] != '\n' || word[strlen(string)] != '\0'){
+        //     printf("Gonna change the buffer pointer\n");
+        //     buffer = word+strlen(string)-1;
+        //     printf("New pointer to buffer: %p\n", buffer);
+        //     printf("New buffer: %s\n", buffer);
+        // }
+
+
+            //If output_lines, print the line number before the line
+
+
+            //if(DEBUG) fprintf(ofp, "\n\nThe line is:%s\nThe Last char is:%d\n", buffer,(int)buffer[strlen(buffer)-1]);
+
              // Check if:
                  // " word " - leading and trailing spaces, meaning its a single word and not a substring of a bigger word
                  // or "\nword " - is the first word in the line (address of word[0]==address of line[0])
@@ -105,77 +151,34 @@ int search(char *string, char *input, char *output, struct opts options){
                      // After string rules: space or '\n' -> *(word+strlen(word))==" " || *(word+strlen(word))=="\n"
                      // If one of each applies, word is not substring of larger string.
 
-            if(word==buffer || strcmp((word-1)," ") && strcmp((word+strlen(string))," ") || word[strlen(string)]=='\n'){
-                if(options.mode==1){
-                    fprintf(ofp,"%s ",word);
-                }else if(options.mode==2){
-                    fprintf(ofp,"%s ",buffer);
-                }
-            }
 
-            if(options.mode>2){
-                if(options.mode==3){
-                    fprintf(ofp,"%s ",word);
-                }else if(options.mode==4){
-                    fprintf(ofp,"%s ",buffer);
-                }
-            }
-            find_result++;
-            if(buffer[strlen(buffer)-1]== '\n'){
-                printf("\n");
-            }
-        }
+
+        
+
+
         if(buffer[strlen(buffer)-1]== '\n'){
             line_num++;
         }
 
+
     }
 
 
 
-    /*if(options.match_case){
-        while(fgets(line, 1030, ifp) != NULL) {
-            word = strstr(line, string);
-            if(word != NULL) {
-                if(options.output_lines){
-                    fprintf(ofp,"Line %d:", line_num);
-                }
-                fprintf(ofp,"%s",line);
-                find_result++;
-            }
-            if(line[strlen(line)-1]== '\n'){
-                line_num++;
-                printf("\n");
-            }
-        }
-    }else if(!options.match_case){
-        while(fgets(line, 1030, ifp) != NULL) {
-            if((strcasestr(line, string)) != NULL) {
-                if(options.output_lines){
-                    fprintf(ofp,"Line %d:",line_num);
-                }
-                fprintf(ofp,"%s\n",line);
-                find_result++;
-            }
-            //get last char of the string in the buffer, if \n, increase line count and print \n for end of line
-            if(line[strlen(line)-1]== '\n'){
-                line_num++;
-                printf("\n");
-            }
-        }
-    }*/
-
-
-    if(find_result == 0) {
-        printf("\nNo matches found for %s in %s.\n",string,input);
-    }else{
-        printf("\n%d Matches found.\n", find_result);
-    }
+    free(buffer);
 
     //Close the files if still open.
-    if(ifp) 
-        fclose(ifp);
+        if(ifp) 
+            fclose(ifp);
 
-    if(ofp && !strcmp(output,"stdout"))
-        fclose(ofp);
-}
+        if(ofp && !strcmp(output,"stdout"))
+            fclose(ofp);
+
+        if(find_result == 0) {
+            printf("\nNo matches found for %s in %s.\n",string,input);
+        }else{
+            printf("\n%d Matches found.\n", find_result);
+        }
+
+        return find_result;
+    }
