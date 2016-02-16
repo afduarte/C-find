@@ -28,6 +28,17 @@ int is_white(char *ch){
     else
         return 0;
 }
+
+/*
+    ALGORITHM:
+        Search function opens input and output files
+        Start reading from file, read while fgets != NULL
+            Break line into words (strtok())
+                strstr on the word, check for whitespace before and after
+                print either line or word, with or without line number
+
+ */
+
 // Search function
 int search(char *string, char *input, char *output, struct opts options){
     //Input file pointer
