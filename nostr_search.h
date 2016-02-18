@@ -41,56 +41,44 @@ int is_white(char *ch){
     }
 }
 
-int find_match(const char *haystack, const char *needle){
+char * find_match(const char *haystack, const char *needle){
 
-    int j = 0;
-
-    for(int i =0;i<strlen(haystack);i++){
-        if(haystack[i]==needle[j]){
-            j++;
-        }else{
-            return 0;
-        }
-    }
-
-    return 1;
-
-    
+    return strstr(haystack,needle);
 }
 
-// int find_match_nocase(const char *haystack, const char *needle){
-//     char * temp;
-//     char * temp_needle;
+char * find_match_nocase(const char *haystack, const char *needle){
+    char * temp;
+    char * temp_needle;
 
-//     temp=malloc((strlen(haystack)+1)*sizeof(char));
-//     strcpy(temp,haystack);
+    temp=malloc((strlen(haystack)+1)*sizeof(char));
+    strcpy(temp,haystack);
 
-//     temp_needle=malloc((strlen(needle)+1)*sizeof(char));
-//     strcpy(temp_needle,needle);
-//     // printf("TEMP:%s\n",temp );
-//     // printf("Haystack: %s\tTemp:%s\n",haystack,temp);
+    temp_needle=malloc((strlen(needle)+1)*sizeof(char));
+    strcpy(temp_needle,needle);
+    // printf("TEMP:%s\n",temp );
+    // printf("Haystack: %s\tTemp:%s\n",haystack,temp);
 
-//     for(int i = 0; i<(strlen(temp_needle)-1); i++){
-//         temp[i] = tolower(temp_needle[i]);
-//     }
+    for(int i = 0; i<(strlen(temp_needle)-1); i++){
+        temp[i] = tolower(temp_needle[i]);
+    }
 
-//     for(int i = 0; i<(strlen(temp)-1); i++){
-//         temp[i] = tolower(temp[i]);
-//     }
+    for(int i = 0; i<(strlen(temp)-1); i++){
+        temp[i] = tolower(temp[i]);
+    }
 
-//     // printf("After to lower: Haystack: %s\tTemp:%s\n",haystack,temp);
+    // printf("After to lower: Haystack: %s\tTemp:%s\n",haystack,temp);
 
-//     if(find_match(temp, temp_needle) != NULL){
-//         char * p = (char*)haystack+(temp-find_match(temp, temp_needle));
-//         printf("on match: Haystack: %s\tTemp:%s\tPointer:%p\n",haystack,temp,p);
-//         free(temp);
-//         free(temp_needle);
-//         return p;
-//     }else{
-//         free(temp);
-//         return NULL;
-//     }
-// }
+    if(find_match(temp, temp_needle) != NULL){
+        char * p = (char*)haystack+(temp-find_match(temp, temp_needle));
+        printf("on match: Haystack: %s\tTemp:%s\tPointer:%p\n",haystack,temp,p);
+        free(temp);
+        free(temp_needle);
+        return p;
+    }else{
+        free(temp);
+        return NULL;
+    }
+}
 
 /*
     ALGORITHM:
@@ -141,24 +129,27 @@ int search(char *string, char *input, char *output, struct opts options){
     printf("\n--RESULTS--\n\n");
 
 
-    // buffer = (char*)malloc(BUFF_SIZE);
+    buffer = (char*)malloc(BUFF_SIZE);
+
+    int i=0 , l;
+
+    while(fgets(buffer, 512, ifp) != NULL){
+
+        word = options.match_case?find_match(buffer,string):find_match_nocase(buffer,string);
+
+        if(word != NULL){
+
+            if(options.output_lines)
+                fprintf(ofp, "Line %d:",line_num);
+
+            fprintf(ofp, "%s\n",word);        
+        }
 
 
-
-    // FILE *fp1;
-    char *oneword;
-    char c;
-
-    oneword = malloc(BUFF_SIZE);
-
-    // fp1 = fopen("TENLINES.TXT","r");
-
-    do {
-      c = fscanf(ifp,"%s",oneword);
-      if(find_match(oneword,string))
-      printf("%s\n",oneword);      
-   } while (c != EOF);             
-
+        if(buffer[strlen(buffer)-1]== '\n'){
+            line_num++;
+        }
+    }
 
 
 

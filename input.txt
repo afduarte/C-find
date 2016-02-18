@@ -1,5 +1,5 @@
 test ipsum dolor lorem sit amet test
-foo
+foo Test
 bar
 foo
 bar

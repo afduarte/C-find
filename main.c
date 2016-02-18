@@ -144,7 +144,7 @@ int main(int argc, char **argv){
             strcpy(search_string,search_string_buffer);
         }
 
-        //TODO: copy input_text_buffer to input_file, use malloc(size of text given
+        
         if(!state.input){
             char input_text_buffer[1024];
             printf("No input file specified, enter the text you want to search in: \n");
@@ -159,17 +159,16 @@ int main(int argc, char **argv){
             output_file = (char*)malloc(7);
             strcpy(output_file,"stdout\0");
 
-            //if(DEBUG) printf("Output file: %s\n",output_file);
         }
 
         if(!options.mode){
-            printf("No mode specified, pick one: [1-3] \n");
-            char mode_buffer[3];
-            fgets(mode_buffer, 3, stdin);
-            remove_newline(mode_buffer);
-            options.mode = atoi(mode_buffer);
+            // printf("No mode specified, pick one: [1-3] \n");
+            // char *mode_buffer;
+            // mode_buffer=scanf("%d",mode_buffer);
+            // options.mode = atoi(mode_buffer);
+            // printf("%d\n",options.mode);
+            options.mode=1;
             
-            //if(DEBUG) printf("Mode: %d\n",options.mode);
         }
 
         search(search_string,input_file,output_file,options)?printf("Search successful! Exiting...\n"):printf("Search unsuccessful! Exiting...\n");;
