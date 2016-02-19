@@ -1,5 +1,5 @@
 //Defining _GNU_SOURCE allows us to use strcasestr() to do case insensitive search on a string, because it is a nonstandard
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <string.h>
 
 // Include stdio.h(Standard Input/Output)
@@ -162,12 +162,13 @@ int main(int argc, char **argv){
         }
 
         if(!options.mode){
-            // printf("No mode specified, pick one: [1-3] \n");
-            // char *mode_buffer;
+            printf("No mode specified, pick one: [1-3] \n");
+            // int mode_buffer;
             // mode_buffer=scanf("%d",mode_buffer);
             // options.mode = atoi(mode_buffer);
             // printf("%d\n",options.mode);
-            options.mode=1;
+            // options.mode=1;
+            scanf("%d",&options.mode);
             
         }
 

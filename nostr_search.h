@@ -16,68 +16,86 @@ struct opts{
     int output_lines;
 };
 
+struct result{
+    // Variable to store the result, either 0 or 1
+    int result;
+    // Flag to indicate where the first match happened
+    int first_match;
+};
+
 //TODO: htmlify if output to file 
 //TODO: Whole word checking not working
-//STATUS: loop until segmentation fault because word is never != NULL
-//TRY: reading file word by word
-//http://cs.smith.edu/~thiebaut/classes/C_Tutor/node126.html
+//STATUS: search working, 
 
-// do {
-//       c = fscanf(fp1,"%s",oneword); /* got one word from the file */
-//       printf("%s\n",oneword);       /* display it on the monitor  */
-//    } while (c != EOF);              /* repeat until EOF           */
+struct result find_match(const char *haystack, const char *needle){
 
-// Checks if a passed in(in the form of a pointer) char is a white space character that matters for this use case
-// Returns 0 if the char passed in is not a '\t', or a '\n' or a ' '
-int is_white(char *ch){
-    if(*ch==' '){
-        return 1;
-    }else if(*ch=='\n'){
-        return 2;
-    }else if(*ch=='\t'){
-        return 3;
-    }else{
-        return 0;
+    // Returns a struct that holds the result (1 or 0) and an int that represents the offset from the first character where the first match happened
+    // The char where the first match happened should only be accounted for if the result is 1
+
+    struct result r = {0,0};
+    // j keeps track of how many characters have been checked
+    int j = 0;
+    // matches keeps track of how many matches were found
+    int matches = 0;
+
+    for(int i =0;i<strlen(haystack);i++){
+        // Guard to not let the function look past the size of "needle"
+        if(j>strlen(needle)-1){
+            r.result=0;
+            return r;
+        }else if(haystack[i]==needle[j]){
+            j++;
+
+            //Checks if first_match has been changed from 0
+            //If it hasn't, assign the value of i to it, so the function returns the offset to where the match occurred
+            if(!r.first_match){
+                r.first_match = i;
+                // Increment the number of matches
+            }
+
+            matches++;
+
+        }else{
+            //Just increment j to keep looking
+            j++;
+        }
     }
+
+    r.result=matches==j?1:0;
+
+    // Effectively, if we're meant to find "hell" in "hello", this function will return {1,0}, meaning if found hell starting at char 0 of hello
+    // On the other hand, if we're looking for "abc" in "abfghc", it will return {0,0}, meaning it did find the a for "abc" on char 0 of "abfghc", but
+
+
+    return r;
+
+    
 }
 
-char * find_match(const char *haystack, const char *needle){
+struct result find_match_nocase(const char *haystack, const char *needle){
+    char *temp_haystack;
+    char *temp_needle;
+    struct result r = {0,0};
 
-    return strstr(haystack,needle);
-}
+    temp_haystack=malloc((strlen(haystack))*sizeof(char));
+    strcpy(temp_haystack,haystack);
 
-char * find_match_nocase(const char *haystack, const char *needle){
-    char * temp;
-    char * temp_needle;
-
-    temp=malloc((strlen(haystack)+1)*sizeof(char));
-    strcpy(temp,haystack);
-
-    temp_needle=malloc((strlen(needle)+1)*sizeof(char));
+    temp_needle=malloc((strlen(needle))*sizeof(char));
     strcpy(temp_needle,needle);
-    // printf("TEMP:%s\n",temp );
-    // printf("Haystack: %s\tTemp:%s\n",haystack,temp);
 
     for(int i = 0; i<(strlen(temp_needle)-1); i++){
-        temp[i] = tolower(temp_needle[i]);
+        temp_needle[i] = (char)tolower(temp_needle[i]);
     }
 
-    for(int i = 0; i<(strlen(temp)-1); i++){
-        temp[i] = tolower(temp[i]);
+    for(int i = 0; i<(strlen(temp_haystack)-1); i++){
+        temp_haystack[i] = (char)tolower(temp_haystack[i]);
     }
 
-    // printf("After to lower: Haystack: %s\tTemp:%s\n",haystack,temp);
+    r = find_match(temp_haystack,temp_needle);
+    free(temp_haystack);
+    free(temp_needle);
 
-    if(find_match(temp, temp_needle) != NULL){
-        char * p = (char*)haystack+(temp-find_match(temp, temp_needle));
-        printf("on match: Haystack: %s\tTemp:%s\tPointer:%p\n",haystack,temp,p);
-        free(temp);
-        free(temp_needle);
-        return p;
-    }else{
-        free(temp);
-        return NULL;
-    }
+    return r;
 }
 
 /*
@@ -118,38 +136,38 @@ int search(char *string, char *input, char *output, struct opts options){
         ofp=stdout;
     //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
     }else if((ofp=fopen(output, "w"))==NULL){
-        //if(DEBUG)printf("Can't open output file: %s\n",output);
+        printf("Can't open output file: %s\n",output);
         return 0;
-    //Else, print success message
-    }else{
-        //if(DEBUG)printf("Opened file: %s to write to\n",output);
     }
 
     // Print the result separator
     printf("\n--RESULTS--\n\n");
 
 
-    buffer = (char*)malloc(BUFF_SIZE);
 
-    int i=0 , l;
+    // FILE *fp1;
+    char *oneword;
+    char c;
+    struct result r;
 
-    while(fgets(buffer, 512, ifp) != NULL){
+    oneword = malloc(BUFF_SIZE);
 
-        word = options.match_case?find_match(buffer,string):find_match_nocase(buffer,string);
+    // fp1 = fopen("TENLINES.TXT","r");
 
-        if(word != NULL){
+    do {
+        c = fscanf(ifp,"%s",oneword);
 
-            if(options.output_lines)
-                fprintf(ofp, "Line %d:",line_num);
+        struct result r;
 
-            fprintf(ofp, "%s\n",word);        
+        r = options.match_case?find_match(oneword,string):find_match_nocase(oneword,string);
+
+        if(r.result){
+            fprintf(ofp,"%s\n",oneword);
+            printf("Result: %d\t%d\n", r.result,r.first_match);
         }
 
+    } while (c != EOF);             
 
-        if(buffer[strlen(buffer)-1]== '\n'){
-            line_num++;
-        }
-    }
 
 
 
