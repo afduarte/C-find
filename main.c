@@ -1,10 +1,7 @@
-//Defining _GNU_SOURCE allows us to use strcasestr() to do case insensitive search on a string, because it is a nonstandard
-// #define _GNU_SOURCE
-#include <string.h>
-
 // Include stdio.h(Standard Input/Output)
 #include <stdio.h>
-// Helper function
+// Libraries that include helper functions
+#include <string.h>
 #include <stdlib.h>
 
 //include newline and search functions
@@ -45,13 +42,8 @@ void print_usage(){
 int main(int argc, char **argv){
 
     // Declarations
-
     struct io state = {0,0,0};
     struct opts options = {0,1,0};
-
-    //if(DEBUG) printf("State:\n \t--input:%d, \n\t--output:%d\n",state.input,state.output);
-
-    //if(DEBUG) printf("Options:\n \t--mode:%d, \n\t--case:%d, \n\t--line nrs:%d\n",options.mode,options.match_case,options.output_lines);
 
     // File to search in
     char *input_file;
@@ -65,33 +57,20 @@ int main(int argc, char **argv){
 
     // Loop through arguments to get passed in options
     // Start on argv[1] because [0] is program name
-        //if(DEBUG) printf("Given %d arguments\n",argc);
 
         for(int i=1;i<=argc-1;i++){
-            //if(DEBUG) printf("Loop: %d\n",i );
         // Parse arguments
             if(argv[i][0]=='-' && strlen(argv[i])==2){
-
-                //if(DEBUG) printf("found '-'\n");
-
                 if(argv[i][1]=='h'){
                     print_usage();
                     return 0;
-
                 }else if(argv[i][1]=='s'){
-
-                    //if(DEBUG) printf("found 's'\n");
-
                     // if "-i" change input_file to filename passed in
                     search_string = (char*)malloc(strlen(argv[i+1]));
                     strcpy(search_string,argv[i+1]);
-                    printf("--%s\n",search_string);
                     state.string = 1;
 
                 }else if(argv[i][1]=='i'){
-
-                    //if(DEBUG) printf("found 'i'\n");
-
                     // if "-i" change input_file to filename passed in
                     input_file = (char*)malloc(strlen(argv[i+1]));
                     strcpy(input_file,argv[i+1]);
@@ -99,34 +78,20 @@ int main(int argc, char **argv){
                     state.input = 1;
 
                 }else if(argv[i][1]=='o'){
-
-                    //if(DEBUG) printf("found 'o'\n");
-
                     // if "-o" change output_file to filename passed in
                     output_file = (char*)malloc(strlen(argv[i+1]));
                     strcpy(output_file,argv[i+1]);
-                    printf("--%s\n",output_file);
                     state.output = 1;
 
                 }else if(argv[i][1]=='c'){
-
-                    //if(DEBUG) printf("found 'c'\n");
-
                     // Case "-c" change match_case to 0
                     options.match_case=0;
                 }else if(argv[i][1]=='l'){
-
-                    //if(DEBUG) printf("found 'l'\n");
-
                     // Case "-l" output line number with the occurrence to the output file
                     options.output_lines=1;
                 }else if(argv[i][1]=='m'){
-
-                    //if(DEBUG) printf("found 'm'\n");
-
                     // Case "-m" record mode
                     options.mode=atoi(argv[i+1]);
-                    printf("--%d\n", options.mode );
                 }else{
                     printf("--Error parsing arguments.--\n");
                     print_usage();
@@ -146,12 +111,9 @@ int main(int argc, char **argv){
 
         
         if(!state.input){
-            char input_text_buffer[1024];
-            printf("No input file specified, enter the text you want to search in: \n");
-            fgets(input_text_buffer, 1024, stdin);
-            remove_newline(input_text_buffer);
-            input_file = (char*)malloc(strlen(input_text_buffer)+1);
-            strcpy(input_file,input_text_buffer);
+            input_file = (char*)malloc(6);
+            strcpy(input_file,"stdin\0");
+            printf("No input file specified, entering continuous input mode, to quit type: --quit-- and press <ENTER>\n");
         }
 
         if(!state.output){
@@ -163,16 +125,15 @@ int main(int argc, char **argv){
 
         if(!options.mode){
             printf("No mode specified, pick one: [1-3] \n");
-            // int mode_buffer;
-            // mode_buffer=scanf("%d",mode_buffer);
-            // options.mode = atoi(mode_buffer);
-            // printf("%d\n",options.mode);
-            // options.mode=1;
             scanf("%d",&options.mode);
             
         }
 
-        search(search_string,input_file,output_file,options)?printf("Search successful! Exiting...\n"):printf("Search unsuccessful! Exiting...\n");;
+        if(search(search_string,input_file,output_file,options) != (-1) ){
+            printf("Search successful! Exiting...\n");
+        }else{
+            printf("Search unsuccessful! Exiting...\n");
+        }
 
         free(search_string);
         free(input_file);
