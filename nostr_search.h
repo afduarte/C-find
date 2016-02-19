@@ -23,11 +23,10 @@ struct result{
     int first_match;
 };
 
-//TODO: htmlify if output to file 
-//TODO: Whole word checking not working
-//STATUS: search working, 
+//STATUS: search working for whole word, going to implement modes now
+//TODO: Implement inclusive search with strstr
 
-struct result find_match(const char *haystack, const char *needle){
+struct result find_match(const char *haystack, const char *needle, int mode){
 
     // Returns a struct that holds the result (1 or 0) and an int that represents the offset from the first character where the first match happened
     // The char where the first match happened should only be accounted for if the result is 1
@@ -37,6 +36,15 @@ struct result find_match(const char *haystack, const char *needle){
     int j = 0;
     // matches keeps track of how many matches were found
     int matches = 0;
+
+    if(mode==3){
+        if((strstr(haystack,needle)) != NULL){
+            r.result = 1;
+            r.first_match = (int)(haystack-needle);
+            return r;
+        }
+    }
+
 
     for(int i =0;i<strlen(haystack);i++){
         // Guard to not let the function look past the size of "needle"
@@ -72,7 +80,7 @@ struct result find_match(const char *haystack, const char *needle){
     
 }
 
-struct result find_match_nocase(const char *haystack, const char *needle){
+struct result find_match_nocase(const char *haystack, const char *needle, int mode){
     char *temp_haystack;
     char *temp_needle;
     struct result r = {0,0};
@@ -91,22 +99,12 @@ struct result find_match_nocase(const char *haystack, const char *needle){
         temp_haystack[i] = (char)tolower(temp_haystack[i]);
     }
 
-    r = find_match(temp_haystack,temp_needle);
+    r = find_match(temp_haystack,temp_needle,mode);
     free(temp_haystack);
     free(temp_needle);
 
     return r;
 }
-
-/*
-    ALGORITHM:
-        Search function opens input and output files
-        Start reading from file, read while fgets != NULL
-            Break line into words (strtok())
-                strstr on the word, check for whitespace before and after
-                print either line or word, with or without line number
-
- */
 
 // Search function
 int search(char *string, char *input, char *output, struct opts options){
@@ -159,11 +157,12 @@ int search(char *string, char *input, char *output, struct opts options){
 
         struct result r;
 
-        r = options.match_case?find_match(oneword,string):find_match_nocase(oneword,string);
+
+
+        r = options.match_case?find_match(oneword,string,options.mode):find_match_nocase(oneword,string,options.mode);
 
         if(r.result){
             fprintf(ofp,"%s\n",oneword);
-            printf("Result: %d\t%d\n", r.result,r.first_match);
         }
 
     } while (c != EOF);             
