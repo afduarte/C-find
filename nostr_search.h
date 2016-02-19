@@ -151,25 +151,22 @@ int search(char *string, char *input, char *output, struct opts options){
     struct result r;
 
     oneword = malloc(BUFF_SIZE);
-    buffer = malloc(BUFF_SIZE);
 
     // fp1 = fopen("TENLINES.TXT","r");
-    while(fgets(buffer, 512, ifp) != NULL){
-        do {
-            // c = fscanf(buffer,"%s",oneword);
-            c = sscanf(buffer,"%s",oneword);
 
-            struct result r;
+    do {
+        c = fscanf(ifp,"%s",oneword);
 
-            r = options.match_case?find_match(oneword,string):find_match_nocase(oneword,string);
+        struct result r;
 
-            if(r.result){
-                fprintf(ofp,"%s\n",oneword);
-                printf("Result: %d\t%d\n", r.result,r.first_match);
-            }
+        r = options.match_case?find_match(oneword,string):find_match_nocase(oneword,string);
 
-        } while (c != EOF);
-    }            
+        if(r.result){
+            fprintf(ofp,"%s\n",oneword);
+            printf("Result: %d\t%d\n", r.result,r.first_match);
+        }
+
+    } while (c != EOF);             
 
 
 

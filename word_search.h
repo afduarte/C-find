@@ -1,5 +1,9 @@
 #pragma once
 
+#include <ctype.h>
+
+#define BUFF_SIZE  512*sizeof(char)
+
 struct opts{
     // Mode: 
     //  1 = literal search (e.g. if you search "hello", you get one occurence for each time "hello" appears in the output file)
@@ -14,6 +18,65 @@ struct opts{
 
 //TODO: htmlify if output to file 
 //TODO: Whole word checking not working
+//STATUS: loop until segmentation fault because word is never != NULL
+//TRY: reading file word by word
+//http://cs.smith.edu/~thiebaut/classes/C_Tutor/node126.html
+
+// do {
+//       c = fscanf(fp1,"%s",oneword); /* got one word from the file */
+//       printf("%s\n",oneword);       /* display it on the monitor  */
+//    } while (c != EOF);              /* repeat until EOF           */
+
+// Checks if a passed in(in the form of a pointer) char is a white space character that matters for this use case
+// Returns 0 if the char passed in is not a '\t', or a '\n' or a ' '
+int is_white(char *ch){
+    if(*ch==' ')
+        return 1;
+    else if(*ch=='\n')
+        return 2;
+    else if(*ch=='\t')
+        return 3;
+    else
+        return 0;
+}
+
+char * find_match(const char *haystack, const char *needle){
+    return strstr(haystack,needle);
+}
+
+char * find_match_nocase(const char *haystack, const char *needle){
+    char * temp;
+    temp=malloc(strlen(haystack)*sizeof(char));
+    strcpy(temp,haystack);
+    // printf("TEMP:%s\n",temp );
+    printf("Haystack: %p\tTemp:%p\n",haystack,temp);
+
+    for(int i = 0; temp[i]; i++){
+        temp[i] = tolower(temp[i]);
+    }
+
+    printf("After to lower: Haystack: %p\tTemp:%p\n",haystack,temp);
+
+    if(find_match(temp, needle) != NULL){
+        char * p = (char*)haystack+(temp-find_match(temp, needle));
+        printf("on match: Haystack: %p\tTemp:%p\tPointer:%p\n",haystack,temp,p);
+        free(temp);
+        return p;
+    }else{
+        free(temp);
+        return NULL;
+    }
+}
+
+/*
+    ALGORITHM:
+        Search function opens input and output files
+        Start reading from file, read while fgets != NULL
+            Break line into words (strtok())
+                strstr on the word, check for whitespace before and after
+                print either line or word, with or without line number
+
+ */
 
 // Search function
 int search(char *string, char *input, char *output, struct opts options){
@@ -53,41 +116,32 @@ int search(char *string, char *input, char *output, struct opts options){
     // Print the result separator
     printf("\n--RESULTS--\n\n");
 
-    buffer = malloc(512*sizeof(char));
+
+    buffer = (char*)malloc(BUFF_SIZE);
+
+    int i=0 , l;
 
     while(fgets(buffer, 512, ifp) != NULL){
 
-        printf("Pointer to buffer: %p\n", buffer);
+        word = options.match_case?find_match(buffer,string):find_match_nocase(buffer,string);
 
-        //If output_lines, print the line number before the line
-        if(options.output_lines){
-            fprintf(ofp,"Line %d:", line_num);
+        if(word != NULL){
+
+            if(options.output_lines)
+                fprintf(ofp, "Line %d:",line_num);
+
+            fprintf(ofp, "%s\n",word);        
         }
 
-        while(word=strtok(buffer, " ") != NULL){
-            if(!strcmp(word,string)){
-                if(options.mode==1){
-                    char *match = word;
-                    match[strlen(string)] ='\0';
-                    fprintf(ofp,"%s ",word);
-                    fprintf(ofp, "\n");
-
-                }else if(options.mode==2){
-                    fprintf(ofp,"%s ",buffer);
-                }
-
-            }
-        }
 
         if(buffer[strlen(buffer)-1]== '\n'){
             line_num++;
         }
-
     }
 
 
 
-    free(buffer);
+    // free(buffer);
 
     //Close the files if still open.
         if(ifp) 

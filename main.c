@@ -1,5 +1,5 @@
 //Defining _GNU_SOURCE allows us to use strcasestr() to do case insensitive search on a string, because it is a nonstandard
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 #include <string.h>
 
 // Include stdio.h(Standard Input/Output)
@@ -15,7 +15,7 @@
 #endif
 
 #ifndef TEST
-#include "test1_search.h"
+#include "new_search.h"
 #endif
 
 
@@ -144,7 +144,7 @@ int main(int argc, char **argv){
             strcpy(search_string,search_string_buffer);
         }
 
-        //TODO: copy input_text_buffer to input_file, use malloc(size of text given
+        
         if(!state.input){
             char input_text_buffer[1024];
             printf("No input file specified, enter the text you want to search in: \n");
@@ -159,17 +159,17 @@ int main(int argc, char **argv){
             output_file = (char*)malloc(7);
             strcpy(output_file,"stdout\0");
 
-            //if(DEBUG) printf("Output file: %s\n",output_file);
         }
 
         if(!options.mode){
             printf("No mode specified, pick one: [1-3] \n");
-            char mode_buffer[3];
-            fgets(mode_buffer, 3, stdin);
-            remove_newline(mode_buffer);
-            options.mode = atoi(mode_buffer);
+            // int mode_buffer;
+            // mode_buffer=scanf("%d",mode_buffer);
+            // options.mode = atoi(mode_buffer);
+            // printf("%d\n",options.mode);
+            // options.mode=1;
+            scanf("%d",&options.mode);
             
-            //if(DEBUG) printf("Mode: %d\n",options.mode);
         }
 
         search(search_string,input_file,output_file,options)?printf("Search successful! Exiting...\n"):printf("Search unsuccessful! Exiting...\n");;
