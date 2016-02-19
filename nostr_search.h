@@ -85,10 +85,10 @@ struct result find_match_nocase(const char *haystack, const char *needle, int mo
     char *temp_needle;
     struct result r = {0,0};
 
-    temp_haystack=malloc((strlen(haystack))*sizeof(char));
+    temp_haystack=(char*)malloc((strlen(haystack))*sizeof(char));
     strcpy(temp_haystack,haystack);
 
-    temp_needle=malloc((strlen(needle))*sizeof(char));
+    temp_needle=(char*)malloc((strlen(needle))*sizeof(char));
     strcpy(temp_needle,needle);
 
     for(int i = 0; i<(strlen(temp_needle)-1); i++){
@@ -121,9 +121,13 @@ int search(char *string, char *input, char *output, struct opts options){
 
     //Open input file
     //If file fails to open, output message and return 0 for unsuccessful
-    if((ifp = fopen(input, "r")) == NULL){
+    //strcmp() returns 0 if the strings are equal.
+    if(!strcmp(input,"stdin")){
+        ifp=stdin;
+    //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
+    }else if((ifp = fopen(input, "r")) == NULL){
         printf("Can't open input file: %s\n",input);
-        return 0;
+        return (-1);
     }else{
         printf("Opened file: %s to read from\n",input);
     }
@@ -135,55 +139,71 @@ int search(char *string, char *input, char *output, struct opts options){
     //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
     }else if((ofp=fopen(output, "w"))==NULL){
         printf("Can't open output file: %s\n",output);
-        return 0;
+        return (-1);
+    }else{
+        printf("Opened file: %s to write to\n",output);
     }
 
     // Print the result separator
     printf("\n--RESULTS--\n\n");
 
-
-
-    // FILE *fp1;
     char *oneword;
     char c;
     struct result r;
 
-    oneword = malloc(BUFF_SIZE);
+    oneword = (char*)malloc(BUFF_SIZE);
 
-    // fp1 = fopen("TENLINES.TXT","r");
+    // Flag for continuous input
+    int cont_input = 1;
 
     do {
         c = fscanf(ifp,"%s",oneword);
 
+        if(!strcmp(input,"stdin")){
+            // Check if text should be asked for in continuous mode
+            if(!strcmp(oneword,"--quit--")){
+                cont_input=0;
+            }
+        }
+
+
         struct result r;
-
-
 
         r = options.match_case?find_match(oneword,string,options.mode):find_match_nocase(oneword,string,options.mode);
 
         if(r.result){
-            fprintf(ofp,"%s\n",oneword);
+
+            if(!strcmp(input,"stdin")){
+                // This makes it easier to see tha match on the command line
+                printf("Match:");
+            }
+
+            if(options.mode == 2){
+                //Print line will go here
+            }else{
+                fprintf(ofp,"%s\n",oneword);
+            }
+            
+            find_result++;
         }
 
-    } while (c != EOF);             
+    }while (c != EOF && cont_input == 1);         
 
 
-
-
-    // free(buffer);
+    if(find_result == 0){
+        fprintf(ofp,"\nNo matches found for %s in %s.\n",string,input);
+    }else{
+        fprintf(ofp,"\n%d Matches found.\n", find_result);
+    }
 
     //Close the files if still open.
-        if(ifp) 
-            fclose(ifp);
-
-        if(ofp && !strcmp(output,"stdout"))
-            fclose(ofp);
-
-        if(find_result == 0) {
-            printf("\nNo matches found for %s in %s.\n",string,input);
-        }else{
-            printf("\n%d Matches found.\n", find_result);
-        }
-
-        return find_result;
+    if(ifp){
+        fclose(ifp);
     }
+
+    if(ofp && strcmp(output,"stdout")){
+        fclose(ofp);
+    }
+
+    return find_result;
+}
