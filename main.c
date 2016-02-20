@@ -12,7 +12,7 @@
 #endif
 
 #ifndef TEST
-#include "nostr_search.h"
+#include "search.h"
 #endif
 
 
@@ -28,7 +28,7 @@ struct io{
 void print_usage(){
     printf("Usage: search [-s string] [-i input_file] [-o output_file] [-c] [-l] [-m 1-3]\n");
     printf("\t-s string: String to search for. If not passed in, user will be prompted for one.\n");
-    printf("\t-i input_file: File containing the text to search in. If not passed in, user will be prompted for a text block.\n");
+    printf("\t-i input_file: File containing the text to search in. If not passed in, user will be prompted for text until --quit-- is entered.\n");
     printf("\t-o output_file: File to output to. If not passed in, output will be shown on the screen\n");
     printf("\t-c: Matching case. If passed, will only find matches where the case corresponds the one in the string to search for.\n");
     printf("\t-l: Line numbers. If passed, will output the number of the line where the match was found.\n");
@@ -124,9 +124,11 @@ int main(int argc, char **argv){
         }
 
         if(!options.mode){
-            printf("No mode specified, pick one: [1-3] \n");
-            scanf("%d",&options.mode);
-            
+            // Only allow the mode to be 1, 2 or 3
+            while(options.mode < 1 || options.mode > 3){
+                printf("No mode specified or you didn't pick between 1 and 3, pick one: [1-3] \n");
+                scanf("%d",&options.mode);
+            }
         }
 
         if(search(search_string,input_file,output_file,options) != (-1) ){
