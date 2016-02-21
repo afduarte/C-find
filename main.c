@@ -139,11 +139,9 @@ int main(int argc, char **argv){
         }
 
         if(!options.mode){
-            // Only allow the mode to be 1, 2 or 3
-            while(options.mode < 1 || options.mode > 3){
-                printf("No mode specified or you didn't pick between 1 and 3, pick one: [1-3] \n");
-                scanf("%d",&options.mode);
-            }
+            // If the search string is multi word, make it mode 2, or else it won't work
+            
+
         }
 
         if(search(search_string,input_file,output_file,options) != (-1) ){
