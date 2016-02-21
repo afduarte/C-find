@@ -15,6 +15,8 @@
 #include "search.h"
 #endif
 
+// TODO: make mode an automatic choice unless enforced
+
 
 struct io{
     // Input file given?
@@ -32,7 +34,7 @@ void print_usage(){
     printf("\t-o output_file: File to output to. If not passed in, output will be shown on the screen\n");
     printf("\t-c: Matching case. If passed, will only find matches where the case corresponds the one in the string to search for.\n");
     printf("\t-l: Line numbers. If passed, will output the number of the line where the match was found.\n");
-    printf("\t-m: Mode. If passed, will select the search mode in one of the three:\n");
+    printf("\t-m: Mode. If passed, will force the search mode in one of the three listed below. If not, will be decided automatically:\n");
     printf("\t\t1 = literal search (e.g. if you search 'hello', you get one occurence for each time 'hello' appears in the input)\n");
     printf("\t\t2 = line search (e.g. if you search 'hello', you get every whole line where 'hello' appears in the input`)\n");
     printf("\t\t3 = inclusive search (e.g. if you search 'hell', you get one occurence for each time 'hell' appears even if the whole word is 'hello' in the input)\n");
@@ -74,7 +76,6 @@ int main(int argc, char **argv){
                     // if "-i" change input_file to filename passed in
                     input_file = (char*)malloc(strlen(argv[i+1]));
                     strcpy(input_file,argv[i+1]);
-                    printf("--%s\n",input_file);
                     state.input = 1;
 
                 }else if(argv[i][1]=='o'){
@@ -101,12 +102,26 @@ int main(int argc, char **argv){
         }
 
         if(!state.string){
-            char search_string_buffer[100];
-            printf("No search string specified, enter the text you want to look for: \n");
-            fgets(search_string_buffer, 100, stdin);
-            remove_newline(search_string_buffer);
-            search_string = (char*)malloc(strlen(search_string_buffer)+2);
-            strcpy(search_string,search_string_buffer);
+            // Check if string was passed in without '-s'
+            if(argv[1][0] != '-'){
+                int i = 1;
+                search_string = malloc(1024*sizeof(char));
+                while(argv[i][0] != '-'){
+                    strcat(search_string,argv[i]);
+                    strcat(search_string, " ");
+                    i++;
+                }
+
+                printf("SEARCH STRING: %s\n",search_string);
+
+            }else{
+                char search_string_buffer[100];
+                printf("No search string specified, enter the text you want to look for: \n");
+                fgets(search_string_buffer, 100, stdin);
+                remove_newline(search_string_buffer);
+                search_string = (char*)malloc(strlen(search_string_buffer)+2);
+                strcpy(search_string,search_string_buffer);
+            }
         }
 
         
