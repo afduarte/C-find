@@ -41,6 +41,14 @@ void print_usage(){
     printf("\t-h: Show this help screen.\n");
 }
 
+int has_space(const char *haystack){
+    for(int i = 0; i<(strlen(haystack)-1); i++){
+        if(haystack[i] == ' ')
+            return 1;
+    }
+    return 0;
+}
+
 int main(int argc, char **argv){
 
     // Declarations
@@ -139,8 +147,16 @@ int main(int argc, char **argv){
         }
 
         if(!options.mode){
-            // If the search string is multi word, make it mode 2, or else it won't work
-            
+            if(has_space(search_string)){
+                // If the search string is multi word, make it mode 2, or else it won't work
+                options.mode = 2;
+            }else if(strlen(search_string)>20){
+                // If the search string is bigger than 20 characters long, use mode 3 because it is faster
+                options.mode = 3;
+            }else{
+                // Fallback to mode 1 for most strings
+                options.mode = 1;
+            }
 
         }
 
