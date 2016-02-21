@@ -16,37 +16,34 @@ struct opts{
     int output_lines;
 };
 
-//STATUS: modes 1&3 working, lacking mode 2 and multi word search
-//TODO: Implement inclusive search with strstr
+//STATUS: All modes working but mode 2 works like mode 3 instead of like mode 1 (finds hell in hello) but prints the whole line
+//TODO: 
 
 int find_match(const char *haystack, const char *needle, int mode){
-
-    // Returns a struct that holds the result (1 or 0) and an int that represents the offset from the first character where the first match happened
-    // The char where the first match happened should only be accounted for if the result is 1
 
     // j keeps track of how many characters have been checked
     int j = 0;
     // matches keeps track of how many matches were found
 
-    if(mode==3){
+    if(mode>=2){
         if((strstr(haystack,needle)) != NULL){
             return 1;
         }else{
             return 0;
         }
-    }
+    }else if(mode == 1){
 
-    for(int i =0;i<strlen(haystack);i++){
-        if(haystack[i]==needle[j]){
-            j++;
-        }else{
-            return 0;
+        for(int i =0;i<strlen(haystack);i++){
+            if(haystack[i]==needle[j]){
+                j++;
+            }else{
+                return 0;
+            }
         }
+
+        return 1;
+
     }
-
-    return 1;
-
-    
 }
 
 int find_match_nocase(const char *haystack, const char *needle, int mode){
@@ -105,6 +102,8 @@ int search(char *string, char *input, char *output, struct opts options){
     //strcmp() returns 0 if the strings are equal.
     if(!strcmp(output,"stdout")){
         ofp=stdout;
+        // Print the result separator if we're writing to stdout
+        printf("\n--RESULTS--\n\n");
     //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
     }else if((ofp=fopen(output, "w"))==NULL){
         printf("Can't open output file: %s\n",output);
@@ -113,17 +112,12 @@ int search(char *string, char *input, char *output, struct opts options){
         printf("Opened file: %s to write to\n",output);
     }
 
-    // Print the result separator
-    printf("\n--RESULTS--\n\n");
-
     char c;
 
     buffer = (char*)malloc(BUFF_SIZE);
 
     // Flag for continuous input
     int cont_input = 1;
-
-    int newline;
 
     // Declare the result variable outside the loop so it isn't reallocated for every iteration
     int result;
@@ -133,41 +127,44 @@ int search(char *string, char *input, char *output, struct opts options){
             c = fscanf(ifp,"%s",buffer);
 
             if(!strcmp(input,"stdin")){
-            // Check if text should be asked for in continuous mode, strcmp returns 0 if the strings match
+                // Check if text should be asked for in continuous mode, strcmp returns 0 if the strings match
                 if(!strcmp(buffer,"--quit--")){
                     cont_input=0;
                 }
             }
 
             // There's no point in searching if the needle is bigger than the haystack
-            if(strlen(buffer)>strlen(string)){
+            if(strlen(buffer)>=strlen(string)){
+
                 result = options.match_case?find_match(buffer,string,options.mode):find_match_nocase(buffer,string,options.mode);
-            }
 
-            // If a match is found
-            if(result){
-                // If we're reading from stdin
-                if(!strcmp(input,"stdin")){
-                // This makes it easier to see tha match on the command line
-                    printf("Match:");
+
+                // If a match is found
+                if(result){
+                    // If we're reading from stdin
+                    if(!strcmp(input,"stdin")){
+                    // This makes it easier to see the match on the command line
+                        printf("Match:");
+                    }
+
+                    fprintf(ofp,"%s\n",buffer);
+
+                    // Increase the number of matches
+                    matches++;
                 }
-
-                fprintf(ofp,"%s\n",buffer);
-
-                // Increase the number of matches
-                matches++;
             }
 
         }while (c != EOF && cont_input == 1);
 
     }else if(options.mode == 2){
 
-        word = (char*)malloc(BUFF_SIZE);
+        // char * line = (char*)malloc(BUFF_SIZE);
 
         while(fgets(buffer, 512, ifp) != NULL){
 
-            while(sscanf(buffer,"%s%n",word,&newline) == EOF){
-                result = options.match_case?find_match(word,string,options.mode):find_match_nocase(word,string,options.mode);
+            if(strlen(buffer)>=strlen(string)){
+
+                result = options.match_case?find_match(buffer,string,options.mode):find_match_nocase(buffer,string,options.mode);
 
                 if(result){
                     // If we're reading from stdin
@@ -185,19 +182,24 @@ int search(char *string, char *input, char *output, struct opts options){
                     // Increase the number of matches
                     matches++;
                 }
+
             }
+            
 
             line_num++;
         }
 
-        free(word);
+        // free(buffer);
 
     }else{
         printf("Error parsing mode\n");
         return 0;
     }
 
-    free(buffer);
+    // Temporary workaround to prevent freeing NULL --MEMORY LEAK!!!--
+    // if(buffer != NULL){
+        free(buffer);
+    // }
 
 
     if(matches == 0){
