@@ -11,9 +11,11 @@
 #include "test_search.h"
 #endif
 
-#ifndef TEST
+#if defined(RELEASE) || defined(DEBUG)
 #include "search.h"
 #endif
+
+// TODO: if(DEBUG) print statements
 
 
 struct io{
@@ -26,17 +28,26 @@ struct io{
 };
 
 void print_usage(){
-    printf("Usage: search [-s string] [-i input_file] [-o output_file] [-c] [-l] [-m 1-3]\n");
+    printf("Usage: find [-s string] [-i input_file] [-o output_file] [-c] [-l] [-m 1-3]\n");
     printf("\t-s string: String to search for. If not passed in, user will be prompted for one.\n");
     printf("\t-i input_file: File containing the text to search in. If not passed in, user will be prompted for text until --quit-- is entered.\n");
     printf("\t-o output_file: File to output to. If not passed in, output will be shown on the screen\n");
     printf("\t-c: Matching case. If passed, will only find matches where the case corresponds the one in the string to search for.\n");
     printf("\t-l: Line numbers. If passed, will output the number of the line where the match was found.\n");
-    printf("\t-m: Mode. If passed, will select the search mode in one of the three:\n");
+    printf("\t-m: Mode. If passed, will force the search mode in one of the three listed below. If not, will be decided automatically:\n");
     printf("\t\t1 = literal search (e.g. if you search 'hello', you get one occurence for each time 'hello' appears in the input)\n");
     printf("\t\t2 = line search (e.g. if you search 'hello', you get every whole line where 'hello' appears in the input`)\n");
     printf("\t\t3 = inclusive search (e.g. if you search 'hell', you get one occurence for each time 'hell' appears even if the whole word is 'hello' in the input)\n");
+    printf("\t\tNOTE: Forcing the mode might return unexpected results! \n");
     printf("\t-h: Show this help screen.\n");
+}
+
+int has_space(const char *haystack){
+    for(int i = 0; i<(strlen(haystack)-1); i++){
+        if(haystack[i] == ' ')
+            return 1;
+    }
+    return 0;
 }
 
 int main(int argc, char **argv){
@@ -57,91 +68,142 @@ int main(int argc, char **argv){
 
     // Loop through arguments to get passed in options
     // Start on argv[1] because [0] is program name
-
-        for(int i=1;i<=argc-1;i++){
+    #ifdef DEBUG
+    printf("Arguments Passed in:\n");
+    #endif
+    
+    for(int i=1;i<=argc-1;i++){
         // Parse arguments
-            if(argv[i][0]=='-' && strlen(argv[i])==2){
-                if(argv[i][1]=='h'){
-                    print_usage();
-                    return 0;
-                }else if(argv[i][1]=='s'){
-                    // if "-i" change input_file to filename passed in
-                    search_string = (char*)malloc(strlen(argv[i+1]));
-                    strcpy(search_string,argv[i+1]);
-                    state.string = 1;
+        if(argv[i][0]=='-' && strlen(argv[i])==2){
+            if(argv[i][1]=='h'){
+                print_usage();
+                return 0;
+            }else if(argv[i][1]=='s'){
+                // if "-i" change input_file to filename passed in
+                search_string = (char*)malloc(strlen(argv[i+1]));
+                strcpy(search_string,argv[i+1]);
+                state.string = 1;
 
-                }else if(argv[i][1]=='i'){
-                    // if "-i" change input_file to filename passed in
-                    input_file = (char*)malloc(strlen(argv[i+1]));
-                    strcpy(input_file,argv[i+1]);
-                    printf("--%s\n",input_file);
-                    state.input = 1;
+                #ifdef DEBUG
+                printf("\t--SEARCH STRING (-s): %s\n",search_string);
+                #endif
 
-                }else if(argv[i][1]=='o'){
-                    // if "-o" change output_file to filename passed in
-                    output_file = (char*)malloc(strlen(argv[i+1]));
-                    strcpy(output_file,argv[i+1]);
-                    state.output = 1;
+            }else if(argv[i][1]=='i'){
+                // if "-i" change input_file to filename passed in
+                input_file = (char*)malloc(strlen(argv[i+1]));
+                strcpy(input_file,argv[i+1]);
+                state.input = 1;
+                
+                #ifdef DEBUG
+                printf("\t--INPUT FILE: %s\n",input_file);
+                #endif
 
-                }else if(argv[i][1]=='c'){
-                    // Case "-c" change match_case to 0
-                    options.match_case=0;
-                }else if(argv[i][1]=='l'){
-                    // Case "-l" output line number with the occurrence to the output file
-                    options.output_lines=1;
-                }else if(argv[i][1]=='m'){
-                    // Case "-m" record mode
-                    options.mode=atoi(argv[i+1]);
-                }else{
-                    printf("--Error parsing arguments.--\n");
-                    print_usage();
-                    return 0;
-                }
+            }else if(argv[i][1]=='o'){
+                // if "-o" change output_file to filename passed in
+                output_file = (char*)malloc(strlen(argv[i+1]));
+                strcpy(output_file,argv[i+1]);
+                state.output = 1;
+
+                #ifdef DEBUG
+                printf("\t--OUTPUT FILE: %s\n",output_file);
+                #endif
+
+            }else if(argv[i][1]=='c'){
+                // Case "-c" change match_case to 0
+                options.match_case=0;
+
+                #ifdef DEBUG
+                printf("\t--CASE INSENSITIVE\n");
+                #endif
+
+            }else if(argv[i][1]=='l'){
+                // Case "-l" output line number with the occurrence to the output file
+                options.output_lines=1;
+
+                #ifdef DEBUG
+                printf("\t--OUTPUT LINE NUMBERS\n");
+                #endif
+
+            }else if(argv[i][1]=='m'){
+                // Case "-m" record mode
+                options.mode=atoi(argv[i+1]);
+
+                #ifdef DEBUG
+                printf("\t--FORCED MODE: %d\n",options.mode);
+                #endif
+            }else{
+                printf("--Error parsing arguments.--\n");
+                print_usage();
+                return 0;
             }
         }
+    }
 
-        if(!state.string){
+
+
+
+    if(!state.string){
+            // Check if string was passed in without '-s'
+        if(argv[1][0] != '-'){
+            int i = 1;
+            search_string = (char*)malloc((strlen(argv[i])+1)*sizeof(char));
+            while(argv[i][0] != '-'){
+                search_string = realloc(search_string,(sizeof(*search_string)+strlen(argv[i])+1)*sizeof(char));
+                strcat(search_string,argv[i]);
+                strcat(search_string, " ");
+                i++;
+            }
+
+
+        }else{
             char search_string_buffer[100];
             printf("No search string specified, enter the text you want to look for: \n");
             fgets(search_string_buffer, 100, stdin);
             remove_newline(search_string_buffer);
-            search_string = (char*)malloc(strlen(search_string_buffer)+2);
+            search_string = (char*)malloc((strlen(search_string_buffer)+2)*sizeof(char));
             strcpy(search_string,search_string_buffer);
         }
-
-        
-        if(!state.input){
-            input_file = (char*)malloc(6);
-            strcpy(input_file,"stdin\0");
-            printf("No input file specified, entering continuous input mode, to quit type: --quit-- and press <ENTER>\n");
-        }
-
-        if(!state.output){
-            printf("No output file specified, printing to stdout: \n");
-            output_file = (char*)malloc(7);
-            strcpy(output_file,"stdout\0");
-
-        }
-
-        if(!options.mode){
-            // Only allow the mode to be 1, 2 or 3
-            while(options.mode < 1 || options.mode > 3){
-                printf("No mode specified or you didn't pick between 1 and 3, pick one: [1-3] \n");
-                scanf("%d",&options.mode);
-            }
-        }
-
-        if(search(search_string,input_file,output_file,options) != (-1) ){
-            printf("Search successful! Exiting...\n");
-        }else{
-            printf("Search unsuccessful! Exiting...\n");
-        }
-
-        free(search_string);
-        free(input_file);
-        free(output_file);
+    }
 
 
-        return 0;
+    if(!state.input){
+        input_file = (char*)malloc(6);
+        strcpy(input_file,"stdin\0");
+        printf("No input file specified, entering continuous input mode, to quit type: --quit-- and press <ENTER>\n");
+    }
+
+    if(!state.output){
+        printf("No output file specified, printing to stdout: \n");
+        output_file = (char*)malloc(7);
+        strcpy(output_file,"stdout\0");
 
     }
+
+    if(!options.mode){
+        if(has_space(search_string) || options.output_lines){
+            // If the search string is multi word or we want the line numbers, make it mode 2, or else it won't work
+            options.mode = 2;
+        }else if(strlen(search_string)>20){
+            // If the search string is bigger than 20 characters long, use mode 3 because it is faster
+            options.mode = 3;
+        }else{
+            // Fallback to mode 1 for most strings
+            options.mode = 1;
+        }
+
+    }
+
+    if(search(search_string,input_file,output_file,options) != (-1) ){
+        printf("Search successful! Exiting...\n");
+    }else{
+        printf("Search unsuccessful! Exiting...\n");
+    }
+
+    free(search_string);
+    free(input_file);
+    free(output_file);
+
+
+    return 0;
+
+}
