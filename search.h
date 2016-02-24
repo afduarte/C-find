@@ -16,60 +16,70 @@ struct opts{
     int output_lines;
 };
 
-//STATUS: All modes working but mode 2 works like mode 3 instead of like mode 1 (finds hell in hello) but prints the whole line
-//TODO: 
-
 int find_match(const char *haystack, const char *needle, int mode){
 
-    // j keeps track of how many characters have been checked
-    int j = 0;
-    // matches keeps track of how many matches were found
+    // Prevents error on freeing the memory space at the end of the function when the last line of the line was passed in for the search
+    // Due to the pointer being NULL. Even if it is not for this case, a NULL check can prevent other problems
+    if(haystack != NULL && needle != NULL){
 
-    if(mode>=2){
-        if((strstr(haystack,needle)) != NULL){
-            return 1;
-        }else{
-            return 0;
-        }
-    }else if(mode == 1){
+        // j keeps track of the index of the character being checked
+        int j = 0;
 
-        for(int i =0;i<strlen(haystack);i++){
-            if(haystack[i]==needle[j]){
-                j++;
+        // If we're not using mode one, use strstr()
+        if(mode>=2){
+            if((strstr(haystack,needle)) != NULL){
+                return 1;
             }else{
                 return 0;
             }
+        // Else do the simpler whole word check
+        }else if(mode == 1){
+
+            for(int i =0;i<strlen(haystack);i++){
+                if(haystack[i]==needle[j]){
+                    j++;
+                }else{
+                    return 0;
+                }
+            }
+
+            return 1;
+
         }
-
-        return 1;
-
     }
 }
 
 int find_match_nocase(const char *haystack, const char *needle, int mode){
-    char *temp_haystack;
-    char *temp_needle;
-    int r;
+    // Prevents error on freeing the memory space at the end of the function when the last line of the line was passed in for the search
+    // Due to the pointer being NULL. Even if it is not for this case, a NULL check can prevent other problems
+    if(haystack != NULL && needle != NULL){
+        char *temp_haystack;
+        char *temp_needle;
+        int r;
 
-    temp_haystack=(char*)malloc((strlen(haystack))*sizeof(char));
-    strcpy(temp_haystack,haystack);
+        temp_haystack=(char*)malloc((strlen(haystack)+1)*sizeof(char));
+        strcpy(temp_haystack,haystack);
 
-    temp_needle=(char*)malloc((strlen(needle))*sizeof(char));
-    strcpy(temp_needle,needle);
+        temp_needle=(char*)malloc((strlen(needle)+1)*sizeof(char));
+        strcpy(temp_needle,needle);
 
-    for(int i = 0; i<(strlen(temp_needle)-1); i++){
-        temp_needle[i] = (char)tolower(temp_needle[i]);
+        for(int i = 0; i<(strlen(temp_needle)-1); i++){
+            temp_needle[i] = (char)tolower(temp_needle[i]);
+        }
+
+        for(int i = 0; i<(strlen(temp_haystack)-1); i++){
+            temp_haystack[i] = (char)tolower(temp_haystack[i]);
+        }
+
+        r = find_match(temp_haystack,temp_needle,mode);
+        free(temp_haystack);
+        free(temp_needle);
+
+        return r;
+
+    }else{
+        return 0;
     }
-
-    for(int i = 0; i<(strlen(temp_haystack)-1); i++){
-        temp_haystack[i] = (char)tolower(temp_haystack[i]);
-    }
-
-    r = find_match(temp_haystack,temp_needle,mode);
-    free(temp_haystack);
-    free(temp_needle);
-
-    return r;
 }
 
 // Search function
@@ -158,8 +168,6 @@ int search(char *string, char *input, char *output, struct opts options){
 
     }else if(options.mode == 2){
 
-        // char * line = (char*)malloc(BUFF_SIZE);
-
         while(fgets(buffer, 512, ifp) != NULL){
 
             if(strlen(buffer)>=strlen(string)){
@@ -169,7 +177,7 @@ int search(char *string, char *input, char *output, struct opts options){
                 if(result){
                     // If we're reading from stdin
                     if(!strcmp(input,"stdin")){
-                    // This makes it easier to see tha match on the command line
+                    // This makes it easier to see the match on the command line
                         printf("Match:");
                     }
 
@@ -189,23 +197,19 @@ int search(char *string, char *input, char *output, struct opts options){
             line_num++;
         }
 
-        // free(buffer);
 
     }else{
         printf("Error parsing mode\n");
         return 0;
     }
 
-    // Temporary workaround to prevent freeing NULL --MEMORY LEAK!!!--
-    // if(buffer != NULL){
         free(buffer);
-    // }
 
 
     if(matches == 0){
         fprintf(ofp,"\nNo matches found for %s in %s.\n",string,input);
     }else{
-        fprintf(ofp,"\n%d Matches found.\n", matches);
+        fprintf(ofp,"\nMatches found: %d\n", matches);
     }
 
     //Close the files if still open.
