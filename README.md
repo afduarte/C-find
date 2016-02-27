@@ -21,6 +21,13 @@ The available targets are the following:
       * Creates the directory `out/` and compiles **find** with `search.obj` and `rmnewline.obj` to the newly created dir and sets `RELEASE`.
 * `clean`
     * Deletes `out/` and `obj/` and with it all the previously compiled filed.
+* `tests`
+    * Runs the targets `prepare`, `release` and then tests the program with the following commands:
+        * `out/find -v` Outputs the version
+        * `out/find -s test -i testfiles/input.txt -o out.txt` Regular search from input file to output file
+        * `out/find test -i testfiles/input.txt -o out-nocase.txt -c` Same, without the -s flag and case insensitive
+        * `out/find -s test -i testfiles/input.txt -l` Outputs to stdout with line numbers and whole line printing (mode 2)
+        * `out/find -o output.txt` Ask for input string and enter continuous input mode. Enter --quit-- and press <kbd>Enter</kbd> to exit
 
 The makefile is prepared for building with gcc, if you don't have gcc installed, either change the appropriate values in the makefile to compile with your prefered compiler or install gcc.
 
