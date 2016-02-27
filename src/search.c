@@ -92,19 +92,6 @@ int search(char *string, char *input, char *output, struct opts options){
 
     char *word;
 
-    //Open input file
-    //If file fails to open, output message and return 0 for unsuccessful
-    //strcmp() returns 0 if the strings are equal.
-    if(!strcmp(input,"stdin")){
-        ifp=stdin;
-    //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
-    }else if((ifp = fopen(input, "r")) == NULL){
-        printf("Can't open input file: %s\n",input);
-        return (-1);
-    }else{
-        printf("Opened file: %s to read from\n",input);
-    }
-
     //Open output file or set stdout as output
     //strcmp() returns 0 if the strings are equal.
     if(!strcmp(output,"stdout")){
@@ -117,6 +104,20 @@ int search(char *string, char *input, char *output, struct opts options){
         return (-1);
     }else{
         printf("Opened file: %s to write to\n",output);
+    }
+
+    //Open input file
+    //If file fails to open, output message and return 0 for unsuccessful
+    //strcmp() returns 0 if the strings are equal.
+    if(!strcmp(input,"stdin")){
+        ifp=stdin;
+        printf("No input file specified, entering continuous input mode, to quit type: --quit-- and press <ENTER>\n");
+    //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
+    }else if((ifp = fopen(input, "r")) == NULL){
+        printf("Can't open input file: %s\n",input);
+        return (-1);
+    }else{
+        printf("Opened file: %s to read from\n",input);
     }
 
     char c;
@@ -134,6 +135,9 @@ int search(char *string, char *input, char *output, struct opts options){
             c = fscanf(ifp,"%s",buffer);
 
             if(!strcmp(input,"stdin")){
+                #ifdef DEBUG
+                printf("\tTHE BUFFER IS:%s\n",buffer);
+                #endif
                 // Check if text should be asked for in continuous mode, strcmp returns 0 if the strings match
                 if(!strcmp(buffer,"--quit--")){
                     cont_input=0;
@@ -141,7 +145,7 @@ int search(char *string, char *input, char *output, struct opts options){
             }
 
             // There's no point in searching if the needle is bigger than the haystack
-            if(strlen(buffer)>=strlen(string)){
+            if(strlen(buffer)>=strlen(string) && cont_input == 1){
 
                 result = options.match_case?find_match(buffer,string,options.mode):find_match_nocase(buffer,string,options.mode);
 
@@ -165,7 +169,22 @@ int search(char *string, char *input, char *output, struct opts options){
 
     }else if(options.mode == 2){
 
-        while(fgets(buffer, 512, ifp) != NULL){
+        while((cont_input == 1) && (fgets(buffer, 512, ifp) != NULL)){
+                #ifdef DEBUG
+                printf("\tTHE BUFFER IS:\"%s\"\n",buffer);
+                #endif
+
+            if(!strcmp(input,"stdin")){
+
+                #ifdef DEBUG
+                printf("\tTHE BUFFER IS:%s\n",buffer);
+                #endif
+                // Check if text should be asked for in continuous mode, strcmp returns 0 if the strings match
+                // fgets includes the newline char in the buffer
+                if(!strcmp(buffer,"--quit--\n")){
+                    cont_input=0;
+                }
+            }
 
             if(strlen(buffer)>=strlen(string)){
 
