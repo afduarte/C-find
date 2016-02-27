@@ -11,7 +11,7 @@
 // Include the header file
 #include "search.h"
 
-#define BUFF_SIZE  512*sizeof(char)
+#define BUFF_SIZE  4096*sizeof(char)
 
 int find_match(const char *haystack, const char *needle, int mode){
 
@@ -96,8 +96,6 @@ int search(char *string, char *input, char *output, struct opts options){
     //strcmp() returns 0 if the strings are equal.
     if(!strcmp(output,"stdout")){
         ofp=stdout;
-        // Print the result separator if we're writing to stdout
-        printf("\n--RESULTS--\n\n");
     //Else, open file output, if file fails to open, output message and return 0 for unsuccessful
     }else if((ofp=fopen(output, "w"))==NULL){
         printf("Can't open output file: %s\n",output);
@@ -129,6 +127,11 @@ int search(char *string, char *input, char *output, struct opts options){
 
     // Declare the result variable outside the loop so it isn't reallocated for every iteration
     int result;
+
+    if(!strcmp(output,"stdout")){
+        // Print the result separator if we're writing to stdout
+        printf("\n--RESULTS--\n\n");
+    }
 
     if(options.mode !=2){
         do{
