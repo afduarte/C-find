@@ -51,6 +51,7 @@ The makefile is prepared for building with gcc, if you don't have gcc installed,
             * `ps aux | find -o spotify.txt` 
         * Would result in:
             * `No matches found for USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND in stdin.`
+* Mode 2 never accounts for multiple occurrences of the same string on the same line. This is because mode two is read line by line as opposed to word by word like the other two modes.
 
 
 **This project was developed as a coursework for the Programming Fundamentals Module**
